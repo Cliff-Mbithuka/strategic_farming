@@ -6,8 +6,8 @@ export const AuthContext = createContext<{ user: any; login: (user: any) => void
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState(null);
 
-  const login = (user: any) => {
-    setUser(user);
+  const login = (userData: any) => {
+    setUser(userData);
   };
 
   const logout = () => {

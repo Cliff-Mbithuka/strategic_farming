@@ -1,19 +1,187 @@
+import { useContext, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { Cloud, CloudRain, Sun, Wind, Coins, TrendingUp, MapPin, Users, Clock, Thermometer, Droplets } from "lucide-react";
 import { Progress } from "./ui/progress";
 import { Badge } from "./ui/badge";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
 import { useCopilot } from "./CopilotContext";
+import { AuthContext } from "../contexts/AuthContext";
+
+interface DashboardData {
+  firstName: string;
+  lastName: string;
+  creditPoints: number;
+  farmHealth: number;
+  activeNeighbors: number;
+  nearestMarket: {
+    name: string;
+    distance: number;
+  };
+}
+
+interface WeatherData {
+  date: string;
+  high: number;
+  low: number;
+  condition: string;
+  humidity: number;
+  rainChance: number;
+}
+
+interface SoilData {
+  moisture: number;
+  nitrogen: number;
+  ph: number;
+  temperature: number;
+}
+
+interface Recommendation {
+  id: number;
+  priority: string;
+  title: string;
+  description: string;
+  type: string;
+}
 
 export function Dashboard() {
+  const navigate = useNavigate();
   const { handleElementClick } = useCopilot();
+  const auth = useContext(AuthContext);
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
+  const [weatherData, setWeatherData] = useState<WeatherData[]>([]);
+  const [soilData, setSoilData] = useState<SoilData | null>(null);
+  const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Get current user's ID from context (we'll need to modify AuthContext to store user ID)
+  const user = auth?.user as any; // Type assertion for now
+
+  // If no user, don't render anything (ProtectedRoute will handle redirect)
+  if (user === null) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1>Dashboard</h1>
+          <p className="text-muted-foreground">Checking authentication...</p>
+        </div>
+      </div>
+    );
+  }
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      if (!user) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        setError(null);
+
+        // Fetch dashboard data (user info and metrics)
+        const dashboardResponse = await fetch(`http://127.0.0.1:5000/dashboard/${user.userId || user.id}`);
+        const dashboardData = await dashboardResponse.json();
+        setDashboardData(dashboardData);
+
+        // Fetch weather data
+        const weatherResponse = await fetch('http://127.0.0.1:5000/weather-forecast');
+        if (weatherResponse.ok) {
+          const weatherData = await weatherResponse.json();
+          // Ensure it's always an array
+          setWeatherData(Array.isArray(weatherData) ? weatherData : []);
+        } else {
+          setWeatherData([]);
+        }
+
+        // Fetch soil conditions
+        const soilResponse = await fetch(`http://127.0.0.1:5000/soil-conditions/${user.userId || user.id}`);
+        const soilData = await soilResponse.json();
+        setSoilData(soilData);
+
+        // Fetch AI recommendations
+        const recResponse = await fetch(`http://127.0.0.1:5000/ai-recommendations/${user.userId || user.id}`);
+        const recData = await recResponse.json();
+        setRecommendations(recData.recommendations);
+
+      } catch (err) {
+        setError('Failed to load dashboard data');
+        console.error('Error fetching dashboard data:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, [user]);
+
   const currentTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   const currentDate = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+  // Helper function to get weather icon based on condition
+  const getWeatherIcon = (condition: string) => {
+    const lowerCondition = condition.toLowerCase();
+    if (lowerCondition.includes('clear') || lowerCondition.includes('sunny')) {
+      return <Sun className="h-8 w-8 text-yellow-500" />;
+    } else if (lowerCondition.includes('cloud')) {
+      return <Cloud className="h-8 w-8 text-gray-500" />;
+    } else if (lowerCondition.includes('rain')) {
+      return <CloudRain className="h-8 w-8 text-blue-500" />;
+    } else if (lowerCondition.includes('wind')) {
+      return <Wind className="h-8 w-8 text-gray-400" />;
+    }
+    return <Cloud className="h-8 w-8 text-gray-500" />;
+  };
+
+  // Helper function to format date
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+
+    if (date.toDateString() === today.toDateString()) {
+      return 'Today';
+    } else if (date.toDateString() === tomorrow.toDateString()) {
+      return 'Tomorrow';
+    } else {
+      return date.toLocaleDateString('en-US', { weekday: 'long' });
+    }
+  };
+
+  // Get today's weather for overlays
+  const todaysWeather = weatherData.length > 0 ? weatherData[0] : null;
+  const mondayWeather = weatherData.find(w => new Date(w.date).getDay() === 1);
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1>Dashboard</h1>
+          <p className="text-muted-foreground">Loading your farm data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1>Dashboard</h1>
+          <p className="text-red-600">{error}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       <div>
-        <h1>Welcome back, Farmer John</h1>
+        <h1>Welcome back, {dashboardData ? `${dashboardData.firstName} ${dashboardData.lastName}` : 'Farmer'}</h1>
         <p className="text-muted-foreground">
           Here's what's happening with your farm today
         </p>
@@ -50,11 +218,15 @@ export function Dashboard() {
                   <Sun className="h-5 w-5" />
                   <span className="font-medium">Today's Weather</span>
                 </div>
-                <p className="text-sm">Clear Skies</p>
-                <p className="text-xs">28°C / 18°C</p>
+                <p className="text-sm">{todaysWeather?.condition || "Clear Skies"}</p>
+                <p className="text-xs">{todaysWeather ? `${todaysWeather.high}°C / ${todaysWeather.low}°C` : "28°C / 18°C"}</p>
                 <div className="flex items-center gap-2 mt-2 pt-2 border-t border-white/20">
-                  <CloudRain className="h-4 w-4" />
-                  <span className="text-xs">Rain expected Monday</span>
+                  {mondayWeather && mondayWeather.rainChance > 0 && (
+                    <>
+                      <CloudRain className="h-4 w-4" />
+                      <span className="text-xs">Rain expected Monday</span>
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -67,15 +239,15 @@ export function Dashboard() {
                 <div className="space-y-1">
                   <div className="flex justify-between gap-4">
                     <span className="text-xs">Air:</span>
-                    <span className="text-sm font-medium">28°C</span>
+                    <span className="text-sm font-medium">{todaysWeather?.high || 28}°C</span>
                   </div>
                   <div className="flex justify-between gap-4">
                     <span className="text-xs">Soil:</span>
-                    <span className="text-sm font-medium">22°C</span>
+                    <span className="text-sm font-medium">{soilData?.temperature || 22}°C</span>
                   </div>
                   <div className="flex justify-between gap-4">
                     <span className="text-xs">Crop:</span>
-                    <span className="text-sm font-medium">24°C</span>
+                    <span className="text-sm font-medium">{Math.round((todaysWeather?.high || 28) * 0.8 + (soilData?.temperature || 22) * 0.2)}°C</span>
                   </div>
                 </div>
               </div>
@@ -89,11 +261,11 @@ export function Dashboard() {
                 <div className="space-y-1">
                   <div className="flex justify-between gap-4">
                     <span className="text-xs">Air Humidity:</span>
-                    <span className="text-sm font-medium">65%</span>
+                    <span className="text-sm font-medium">{todaysWeather?.humidity || 65}%</span>
                   </div>
                   <div className="flex justify-between gap-4">
                     <span className="text-xs">Soil Moisture:</span>
-                    <span className="text-sm font-medium">78%</span>
+                    <span className="text-sm font-medium">{soilData?.moisture || 78}%</span>
                   </div>
                 </div>
               </div>
@@ -152,66 +324,66 @@ export function Dashboard() {
 
       {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card 
+        <Card
           className="cursor-pointer transition-all hover:shadow-lg hover:scale-105 hover:border-green-500/50"
-          onClick={() => handleElementClick("Credit Points", { points: 1247, rank: "Gold", nextRank: "Platinum" })}
+          onClick={() => handleElementClick("Credit Points", { points: dashboardData?.creditPoints, rank: "Gold", nextRank: "Platinum" })}
         >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm">Credit Points</CardTitle>
             <Coins className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">1,247</div>
+            <div className="text-2xl font-bold">{dashboardData?.creditPoints.toLocaleString() || "0"}</div>
             <p className="text-xs text-muted-foreground">
               <span className="text-green-600">+12.5%</span> from last month
             </p>
           </CardContent>
         </Card>
 
-        <Card 
+        <Card
           className="cursor-pointer transition-all hover:shadow-lg hover:scale-105 hover:border-green-500/50"
-          onClick={() => handleElementClick("Farm Health", { health: 94, status: "Optimal" })}
+          onClick={() => handleElementClick("Farm Health", { health: dashboardData?.farmHealth, status: "Optimal" })}
         >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm">Farm Health</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">94%</div>
+            <div className="text-2xl font-bold">{dashboardData?.farmHealth || 0}%</div>
             <p className="text-xs text-muted-foreground">
               Optimal conditions detected
             </p>
           </CardContent>
         </Card>
 
-        <Card 
+        <Card
           className="cursor-pointer transition-all hover:shadow-lg hover:scale-105 hover:border-green-500/50"
-          onClick={() => handleElementClick("Active Neighbors", { count: 23, opportunities: 3 })}
+          onClick={() => handleElementClick("Active Neighbors", { count: dashboardData?.activeNeighbors, opportunities: 3 })}
         >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm">Active Neighbors</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">23</div>
+            <div className="text-2xl font-bold">{dashboardData?.activeNeighbors || 0}</div>
             <p className="text-xs text-muted-foreground">
               Farmers collaborating nearby
             </p>
           </CardContent>
         </Card>
 
-        <Card 
+        <Card
           className="cursor-pointer transition-all hover:shadow-lg hover:scale-105 hover:border-green-500/50"
-          onClick={() => handleElementClick("Nearest Market", { name: "Green Valley Market", distance: "12km" })}
+          onClick={() => handleElementClick("Nearest Market", { name: dashboardData?.nearestMarket.name, distance: `${dashboardData?.nearestMarket.distance}km` })}
         >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm">Nearest Market</CardTitle>
             <MapPin className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">12 km</div>
+            <div className="text-2xl font-bold">{dashboardData?.nearestMarket.distance || 0} km</div>
             <p className="text-xs text-muted-foreground">
-              Green Valley Market
+              {dashboardData?.nearestMarket.name || "Market"}
             </p>
           </CardContent>
         </Card>
@@ -229,61 +401,21 @@ export function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Sun className="h-8 w-8 text-yellow-500" />
-                  <div>
-                    <p className="font-medium">Today</p>
-                    <p className="text-sm text-muted-foreground">Clear skies</p>
+              {weatherData.slice(0, 4).map((weather, index) => (
+                <div key={index} className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    {getWeatherIcon(weather.condition)}
+                    <div>
+                      <p className="font-medium">{formatDate(weather.date)}</p>
+                      <p className="text-sm text-muted-foreground">{weather.condition}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-medium">{weather.high}°C / {weather.low}°C</p>
+                    <p className="text-sm text-muted-foreground">Humidity: {weather.humidity}%</p>
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className="font-medium">28°C / 18°C</p>
-                  <p className="text-sm text-muted-foreground">Humidity: 65%</p>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Cloud className="h-8 w-8 text-gray-500" />
-                  <div>
-                    <p className="font-medium">Tomorrow</p>
-                    <p className="text-sm text-muted-foreground">Partly cloudy</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="font-medium">26°C / 17°C</p>
-                  <p className="text-sm text-muted-foreground">Humidity: 70%</p>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <CloudRain className="h-8 w-8 text-blue-500" />
-                  <div>
-                    <p className="font-medium">Monday</p>
-                    <p className="text-sm text-muted-foreground">Light rain</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="font-medium">23°C / 16°C</p>
-                  <p className="text-sm text-muted-foreground">Humidity: 85%</p>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Wind className="h-8 w-8 text-gray-400" />
-                  <div>
-                    <p className="font-medium">Tuesday</p>
-                    <p className="text-sm text-muted-foreground">Windy</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="font-medium">25°C / 15°C</p>
-                  <p className="text-sm text-muted-foreground">Humidity: 60%</p>
-                </div>
-              </div>
+              ))}
             </div>
           </CardContent>
         </Card>
@@ -300,36 +432,36 @@ export function Dashboard() {
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
                 <span>Soil Moisture</span>
-                <span className="font-medium">78%</span>
+                <span className="font-medium">{soilData?.moisture || 78}%</span>
               </div>
-              <Progress value={78} className="h-2" />
+              <Progress value={soilData?.moisture || 78} className="h-2" />
               <p className="text-xs text-muted-foreground">Optimal for wheat</p>
             </div>
 
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
                 <span>Nitrogen Level</span>
-                <span className="font-medium">65%</span>
+                <span className="font-medium">{soilData?.nitrogen || 65}%</span>
               </div>
-              <Progress value={65} className="h-2" />
+              <Progress value={soilData?.nitrogen || 65} className="h-2" />
               <p className="text-xs text-muted-foreground">Good condition</p>
             </div>
 
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
                 <span>pH Balance</span>
-                <span className="font-medium">6.5</span>
+                <span className="font-medium">{soilData?.ph || 6.5}</span>
               </div>
-              <Progress value={65} className="h-2" />
+              <Progress value={(soilData?.ph || 6.5) * 10} className="h-2" />
               <p className="text-xs text-muted-foreground">Ideal for most crops</p>
             </div>
 
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
                 <span>Temperature</span>
-                <span className="font-medium">22°C</span>
+                <span className="font-medium">{soilData?.temperature || 22}°C</span>
               </div>
-              <Progress value={73} className="h-2" />
+              <Progress value={(soilData?.temperature || 22) / 40 * 100} className="h-2" />
               <p className="text-xs text-muted-foreground">Perfect for growth</p>
             </div>
           </CardContent>
@@ -347,53 +479,40 @@ export function Dashboard() {
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            <div 
-              className="flex items-start gap-3 p-3 bg-green-50 dark:bg-green-950 rounded-lg cursor-pointer transition-all hover:bg-green-100 dark:hover:bg-green-900"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleElementClick("Tomato Planting Recommendation", { crop: "Tomatoes", priority: "High", price: "$4.50/kg" });
-              }}
-            >
-              <Badge className="bg-green-600">High Priority</Badge>
-              <div className="flex-1">
-                <p className="font-medium">Optimal planting window for tomatoes</p>
-                <p className="text-sm text-muted-foreground">
-                  Soil conditions and weather patterns indicate ideal conditions for the next 5 days. Market demand is high with prices at $4.50/kg.
-                </p>
-              </div>
-            </div>
+            {recommendations.map((rec) => {
+              const getBgColor = () => {
+                if (rec.priority === "High") return "bg-green-50 dark:bg-green-950 hover:bg-green-100 dark:hover:bg-green-900";
+                if (rec.priority === "Medium") return "bg-blue-50 dark:bg-blue-950 hover:bg-blue-100 dark:hover:bg-blue-900";
+                return "bg-yellow-50 dark:bg-yellow-950 hover:bg-yellow-100 dark:hover:bg-yellow-900";
+              };
 
-            <div 
-              className="flex items-start gap-3 p-3 bg-blue-50 dark:bg-blue-950 rounded-lg cursor-pointer transition-all hover:bg-blue-100 dark:hover:bg-blue-900"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleElementClick("Neighbor Collaboration", { neighbors: 3, points: 150 });
-              }}
-            >
-              <Badge className="bg-blue-600">Medium Priority</Badge>
-              <div className="flex-1">
-                <p className="font-medium">Consider collaboration with 3 nearby farmers</p>
-                <p className="text-sm text-muted-foreground">
-                  Neighboring farms are planting complementary crops. Coordinating can optimize pest control and earn 150 credit points.
-                </p>
-              </div>
-            </div>
+              const getBadgeColor = () => {
+                if (rec.priority === "High") return "bg-green-600";
+                if (rec.priority === "Medium") return "bg-blue-600";
+                return "bg-yellow-600";
+              };
 
-            <div 
-              className="flex items-start gap-3 p-3 bg-yellow-50 dark:bg-yellow-950 rounded-lg cursor-pointer transition-all hover:bg-yellow-100 dark:hover:bg-yellow-900"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleElementClick("Pest Risk Alert", { risk: "High", crop: "Corn", action: "Preventive treatment needed" });
-              }}
-            >
-              <Badge className="bg-yellow-600">Watch</Badge>
-              <div className="flex-1">
-                <p className="font-medium">Pest risk increasing for corn fields</p>
-                <p className="text-sm text-muted-foreground">
-                  Satellite data shows increased activity in the region. Consider preventive measures within 48 hours.
-                </p>
-              </div>
-            </div>
+              return (
+                <div
+                  key={rec.id}
+                  className={`flex items-start gap-3 p-3 rounded-lg cursor-pointer transition-all ${getBgColor()}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleElementClick(`${rec.title}`, { ...rec });
+                  }}
+                >
+                  <Badge className={getBadgeColor()}>
+                    {rec.priority === "Watch" ? "Watch" : `${rec.priority} Priority`}
+                  </Badge>
+                  <div className="flex-1">
+                    <p className="font-medium">{rec.title}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {rec.description}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </CardContent>
       </Card>
