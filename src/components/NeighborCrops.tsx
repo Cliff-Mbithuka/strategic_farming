@@ -71,7 +71,7 @@ export function NeighborCrops() {
       title: "Bulk Equipment Rental",
       participants: ["David Chen", "Priya Patel", "You"],
       reward: 150,
-      description: "Share harvesting equipment to reduce costs. Estimated savings of $800 per farmer.",
+      description: "Share harvesting equipment to reduce costs. Estimated savings of KSH 800 per farmer.",
       deadline: "5 days"
     },
     {
@@ -126,7 +126,7 @@ export function NeighborCrops() {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">$2,340</div>
+            <div className="text-2xl font-bold">KSH 2,340</div>
             <p className="text-xs text-muted-foreground">
               Through collaboration
             </p>

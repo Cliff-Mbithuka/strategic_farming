@@ -10,9 +10,9 @@ export function MarketPlace() {
       name: "Green Valley Market",
       distance: "12 km",
       demands: [
-        { crop: "Tomatoes", price: "$4.50/kg", trend: "up", demand: "High" },
-        { crop: "Wheat", price: "$0.85/kg", trend: "stable", demand: "Medium" },
-        { crop: "Corn", price: "$1.20/kg", trend: "up", demand: "High" }
+        { crop: "Tomatoes", price: "KSH 675/kg", trend: "up", demand: "High" },
+        { crop: "Wheat", price: "KSH 128/kg", trend: "stable", demand: "Medium" },
+        { crop: "Corn", price: "KSH 180/kg", trend: "up", demand: "High" }
       ],
       buyers: 45,
       rating: 4.8
@@ -21,9 +21,9 @@ export function MarketPlace() {
       name: "Central City Wholesale",
       distance: "28 km",
       demands: [
-        { crop: "Vegetables", price: "$3.20/kg", trend: "up", demand: "High" },
-        { crop: "Rice", price: "$1.50/kg", trend: "down", demand: "Low" },
-        { crop: "Peppers", price: "$5.80/kg", trend: "up", demand: "Very High" }
+        { crop: "Vegetables", price: "KSH 480/kg", trend: "up", demand: "High" },
+        { crop: "Rice", price: "KSH 225/kg", trend: "down", demand: "Low" },
+        { crop: "Peppers", price: "KSH 870/kg", trend: "up", demand: "Very High" }
       ],
       buyers: 120,
       rating: 4.6
@@ -32,9 +32,9 @@ export function MarketPlace() {
       name: "Farmer's Direct Co-op",
       distance: "18 km",
       demands: [
-        { crop: "Organic Wheat", price: "$1.20/kg", trend: "up", demand: "Medium" },
-        { crop: "Soybeans", price: "$1.40/kg", trend: "stable", demand: "Medium" },
-        { crop: "Lentils", price: "$2.30/kg", trend: "up", demand: "High" }
+        { crop: "Organic Wheat", price: "KSH 180/kg", trend: "up", demand: "Medium" },
+        { crop: "Soybeans", price: "KSH 210/kg", trend: "stable", demand: "Medium" },
+        { crop: "Lentils", price: "KSH 345/kg", trend: "up", demand: "High" }
       ],
       buyers: 32,
       rating: 4.9
@@ -42,30 +42,30 @@ export function MarketPlace() {
   ];
 
   const priceAnalysis = [
-    { crop: "Tomatoes", currentPrice: "$4.50", lastWeek: "$4.20", change: "+7.1%", forecast: "Increasing" },
-    { crop: "Wheat", currentPrice: "$0.85", lastWeek: "$0.87", change: "-2.3%", forecast: "Stable" },
-    { crop: "Corn", currentPrice: "$1.20", lastWeek: "$1.15", change: "+4.3%", forecast: "Increasing" },
-    { crop: "Peppers", currentPrice: "$5.80", lastWeek: "$5.50", change: "+5.5%", forecast: "Increasing" },
-    { crop: "Rice", currentPrice: "$1.50", lastWeek: "$1.65", change: "-9.1%", forecast: "Decreasing" }
+    { crop: "Tomatoes", currentPrice: "KSH 675", lastWeek: "KSH 630", change: "+7.1%", forecast: "Increasing" },
+    { crop: "Wheat", currentPrice: "KSH 128", lastWeek: "KSH 131", change: "-2.3%", forecast: "Stable" },
+    { crop: "Corn", currentPrice: "KSH 180", lastWeek: "KSH 173", change: "+4.3%", forecast: "Increasing" },
+    { crop: "Peppers", currentPrice: "KSH 870", lastWeek: "KSH 825", change: "+5.5%", forecast: "Increasing" },
+    { crop: "Rice", currentPrice: "KSH 225", lastWeek: "KSH 248", change: "-9.1%", forecast: "Decreasing" }
   ];
 
   const recommendations = [
     {
       title: "High Demand: Tomatoes at Green Valley Market",
-      description: "Current price: $4.50/kg, 7.1% above last week. High demand expected for next 2 weeks.",
-      potential: "$2,850",
+      description: "Current price: KSH 675/kg, 7.1% above last week. High demand expected for next 2 weeks.",
+      potential: "KSH 427,500",
       action: "Harvest and sell now"
     },
     {
       title: "Bulk Opportunity: Peppers at Central City",
       description: "Very high demand with premium pricing. 5 buyers actively seeking suppliers.",
-      potential: "$3,200",
+      potential: "KSH 480,000",
       action: "Contact buyers"
     },
     {
       title: "Collaborative Sale: Wheat with 3 neighbors",
       description: "Combine harvest with nearby farmers for better negotiating power. +12% price increase.",
-      potential: "$1,950",
+      potential: "KSH 292,500",
       action: "Join collaboration"
     }
   ];
@@ -113,7 +113,7 @@ export function MarketPlace() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">$8,000</div>
+            <div className="text-2xl font-bold">KSH 1,200,000</div>
             <p className="text-xs text-muted-foreground">
               From current harvest
             </p>
