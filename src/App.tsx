@@ -13,10 +13,10 @@ import { FloatingCopilot } from "./components/FloatingCopilot";
 import { CopilotProvider } from "./components/CopilotContext";
 import SignIn from "./components/SignIn";
 
-
 type View = "dashboard" | "satellite" | "neighbors" | "pests" | "market" | "chat" | "credits";
 
 export default function App() {
+  const [isSignedIn, setIsSignedIn] = useState(false);
   const [currentView, setCurrentView] = useState<View>("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
@@ -50,6 +50,11 @@ export default function App() {
         return <Dashboard />;
     }
   };
+
+   // 🔹 Show Sign In first
+  if (!isSignedIn) {
+    return <SignIn onSignIn={() => setIsSignedIn(true)} />;
+  }
 
   return (
     <CopilotProvider>
