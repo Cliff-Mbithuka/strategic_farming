@@ -1,117 +1,91 @@
-import React, { useState } from "react";
+import { useContext, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
+import { Input } from "./ui/input";
+import { Label } from "./ui/label";
+import { Button } from "./ui/button";
+import { AuthContext } from "../contexts/AuthContext";
 
-type SignInProps = {
-  onSignIn: () => void;
-};
-
-const SignIn: React.FC<SignInProps> = ({ onSignIn }) => {
-  const [username, setUsername] = useState("");
+export default function SignIn() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const auth = useContext(AuthContext);
+  const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSignIn = async () => {
+    const response = await fetch("http://127.0.0.1:5000/signin", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email, password }),
+    });
 
-    if (password !== confirmPassword) {
-      alert("Passwords do not match!");
-      return;
+    const data = await response.json();
+
+    if (response.ok) {
+      auth?.login(data.user);
+      navigate("/dashboard");
+    } else {
+      alert(data.error);
     }
-
-    console.log("Username:", username);
-    console.log("Email:", email);
-    console.log("Password:", password);
-
-    onSignIn(); // switch to dashboard
   };
 
   return (
-    <div style={styles.page}>
-      <div style={styles.container}>
-        <h2 style={styles.title}>Welcome to AgriSmart 🌱</h2>
-        <form onSubmit={handleSubmit} style={styles.form}>
-          <input
-            type="text"
-            placeholder="Username"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            required
-            style={styles.input}
-          />
-          <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            style={styles.input}
-          />
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            style={styles.input}
-          />
-          <input
-            type="password"
-            placeholder="Confirm Password"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            required
-            style={styles.input}
-          />
-          <button type="submit" style={styles.button}>
-            Sign In
-          </button>
-        </form>
-      </div>
+    <div className="flex items-center justify-center h-screen bg-gray-100">
+      <Card className="mx-auto max-w-sm">
+        <CardHeader>
+          <CardTitle className="text-2xl">Sign In</CardTitle>
+          <CardDescription>
+            Enter your email below to login to your account
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="m@example.com"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </div>
+            <div className="grid gap-2">
+              <div className="flex items-center">
+                <Label htmlFor="password">Password</Label>
+                <Link
+                  to="#"
+                  className="ml-auto inline-block text-sm underline"
+                >
+                  Forgot your password?
+                </Link>
+              </div>
+              <Input
+                id="password"
+                type="password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </div>
+            <Button onClick={handleSignIn} type="submit" className="w-full">
+              Login
+            </Button>
+            <Button variant="outline" className="w-full">
+              Login with Google
+            </Button>
+          </div>
+          <div className="mt-4 text-center text-sm">
+            Don't have an account?{" "}
+            <Link to="/signup" className="underline">
+              Sign up
+            </Link>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
-};
-
-const styles: Record<string, React.CSSProperties> = {
-  page: {
-    height: "100vh",
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    background: "linear-gradient(to bottom right, #a8e063, #56ab2f)",
-  },
-  container: {
-    width: "320px",
-    backgroundColor: "#fff",
-    padding: "30px",
-    borderRadius: "10px",
-    boxShadow: "0 4px 10px rgba(0,0,0,0.15)",
-    textAlign: "center",
-  },
-  title: {
-    marginBottom: "20px",
-    color: "#333",
-  },
-  form: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "10px",
-  },
-  input: {
-    padding: "10px",
-    fontSize: "16px",
-    border: "1px solid #ccc",
-    borderRadius: "5px",
-  },
-  button: {
-    padding: "10px",
-    fontSize: "16px",
-    backgroundColor: "#28a745",
-    color: "white",
-    border: "none",
-    borderRadius: "5px",
-    cursor: "pointer",
-    transition: "background-color 0.2s ease-in-out",
-  },
-};
-
-export default SignIn;
+}
