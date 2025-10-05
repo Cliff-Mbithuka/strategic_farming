@@ -195,11 +195,7 @@ export function Dashboard() {
         </CardHeader>
         <CardContent className="p-0">
           <div className="relative">
-            <ImageWithFallback
-              src="https://images.unsplash.com/photo-1722080767360-f0640ae8ce2f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxlYXJ0aCUyMHNhdGVsbGl0ZSUyMG1hcHxlbnwxfHx8fDE3NTk1NjAyMTV8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral"
-              alt="Satellite view of farm"
-              className="w-full h-[400px] object-cover"
-            />
+            <SatelliteView />
             
             {/* Data Overlays */}
             <div className="absolute inset-0 pointer-events-none">
