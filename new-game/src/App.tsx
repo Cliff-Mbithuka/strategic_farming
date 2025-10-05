@@ -276,11 +276,6 @@ export default function App() {
         />
       </div>
 
-        <div className="space-y-1 text-xs">
-          <p><span className="font-medium">State:</span> {gameState}</p>
-          <p><span className="font-medium">Name:</span> {playerProfile.name}</p>
-          <p><span className="font-medium">Location:</span> {playerProfile.location}</p>
-        </div>
 
       <AnimatePresence mode="wait">
         {gameState === 'login' && (
