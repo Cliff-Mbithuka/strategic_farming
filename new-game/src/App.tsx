@@ -16,6 +16,11 @@ export interface PlayerProfile {
   name: string;
   avatar: string;
   location: string;
+  locationCoordinates?: {
+    lat: number;
+    lng: number;
+    address?: string;
+  };
   level: number;
   xp: number;
   badges: string[];
@@ -73,9 +78,9 @@ export default function App() {
     setGameState('location');
   };
 
-  const handleLocationComplete = (location: string) => {
-    setPlayerProfile(prev => ({ ...prev, location }));
-    // Generate random environment data based on location
+  const handleLocationComplete = (location: string, coordinates?: { lat: number; lng: number; address?: string }) => {
+    setPlayerProfile(prev => ({ ...prev, location, locationCoordinates: coordinates }));
+    // Generate fallback environment data based on location (will be overridden by LLM)
     const locations = {
       'Nairobi': { soilType: 'clay' as const, weather: 'temperate' as const, climate: 'highland' as const, season: 'wet' as const },
       'Mombasa': { soilType: 'sandy' as const, weather: 'rainy' as const, climate: 'coastal' as const, season: 'wet' as const },
@@ -114,6 +119,14 @@ export default function App() {
     
     if (results.completedCorrectly && gameData.currentLevel === 1 && !newBadges.includes('soil-pro')) {
       newBadges.push('soil-pro');
+    }
+    
+    if (results.completedCorrectly && gameData.currentLevel === 2 && !newBadges.includes('weather-pro')) {
+      newBadges.push('weather-pro');
+    }
+    
+    if (results.completedCorrectly && gameData.currentLevel === 3 && !newBadges.includes('tools-pro')) {
+      newBadges.push('tools-pro');
     }
     
     setPlayerProfile(prev => ({

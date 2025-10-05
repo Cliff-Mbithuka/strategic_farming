@@ -4,6 +4,7 @@ import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { Badge } from './ui/badge';
 import { EnvironmentData, PlayerProfile } from '../App';
+import { getEnvironmentalAnalysis, EnvironmentalData as LLMEnvironmentalData } from '../services/llmService';
 
 interface EnvironmentInsightsProps {
   environmentData: EnvironmentData;
@@ -11,88 +12,47 @@ interface EnvironmentInsightsProps {
   onComplete: () => void;
 }
 
-const soilData = {
-  clay: {
-    emoji: '🟫',
-    name: 'Clay Soil',
-    color: 'amber',
-    description: 'Rich, holds water well, perfect for crops like maize and beans',
-    benefits: ['High water retention', 'Rich in nutrients', 'Good for root crops'],
-    challenges: ['Can become waterlogged', 'Hard when dry', 'Slow drainage']
-  },
-  sandy: {
-    emoji: '🟨',
-    name: 'Sandy Soil',
-    color: 'yellow',
-    description: 'Drains quickly, warms up fast, ideal for quick-growing crops',
-    benefits: ['Good drainage', 'Easy to work', 'Warms up quickly'],
-    challenges: ['Low water retention', 'Needs frequent watering', 'Low nutrients']
-  },
-  loamy: {
-    emoji: '🟤',
-    name: 'Loamy Soil',
-    color: 'orange',
-    description: 'Perfect balance of sand, silt, and clay - ideal for most crops',
-    benefits: ['Balanced drainage', 'High fertility', 'Excellent structure'],
-    challenges: ['Can be expensive', 'Needs maintenance', 'May compact over time']
-  }
-};
-
-const weatherData = {
-  dry: {
-    emoji: '☀️',
-    name: 'Dry Season',
-    color: 'orange',
-    description: 'Low rainfall, requires irrigation and drought-resistant crops',
-    tips: ['Use drip irrigation', 'Plant drought-resistant varieties', 'Mulch to retain moisture']
-  },
-  rainy: {
-    emoji: '🌧️',
-    name: 'Rainy Season',
-    color: 'blue',
-    description: 'High rainfall, watch for flooding and plant diseases',
-    tips: ['Ensure good drainage', 'Watch for fungal diseases', 'Plant water-loving crops']
-  },
-  temperate: {
-    emoji: '⛅',
-    name: 'Moderate Weather',
-    color: 'green',
-    description: 'Balanced conditions, ideal for diverse crop varieties',
-    tips: ['Perfect for mixed farming', 'Good for most vegetables', 'Maintain regular watering']
-  }
-};
-
-const climateData = {
-  highland: {
-    emoji: '⛰️',
-    name: 'Highland Climate',
-    color: 'purple',
-    description: 'Cool temperatures, great for grains and vegetables',
-    crops: ['Maize', 'Wheat', 'Potatoes', 'Cabbage']
-  },
-  coastal: {
-    emoji: '🏖️',
-    name: 'Coastal Climate',
-    color: 'cyan',
-    description: 'Warm and humid, perfect for tropical crops',
-    crops: ['Coconuts', 'Cashews', 'Mangoes', 'Cassava']
-  },
-  tropical: {
-    emoji: '🌴',
-    name: 'Tropical Climate',
-    color: 'green',
-    description: 'Hot and humid, ideal for tropical agriculture',
-    crops: ['Bananas', 'Coffee', 'Sugarcane', 'Pineapples']
-  }
-};
-
 export function EnvironmentInsights({ environmentData, playerProfile, onComplete }: EnvironmentInsightsProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const [showRecommendations, setShowRecommendations] = useState(false);
+  const [llmData, setLlmData] = useState<LLMEnvironmentalData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const soil = soilData[environmentData.soilType];
-  const weather = weatherData[environmentData.weather];
-  const climate = climateData[environmentData.climate];
+  // Query LLM for environmental analysis
+  useEffect(() => {
+    const fetchEnvironmentalData = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        
+        // Use coordinates from player profile (from map selection)
+        const coordinates = playerProfile.locationCoordinates 
+          ? {
+              lat: playerProfile.locationCoordinates.lat,
+              lng: playerProfile.locationCoordinates.lng,
+              name: playerProfile.location,
+              address: playerProfile.locationCoordinates.address
+            }
+          : undefined;
+
+        const analysisData = await getEnvironmentalAnalysis(playerProfile.location, coordinates);
+        setLlmData(analysisData);
+      } catch (err) {
+        console.error('Error fetching environmental analysis:', err);
+        setError('Failed to load environmental analysis. Using default data.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchEnvironmentalData();
+  }, [playerProfile.location]);
+
+  // Use LLM data if available, otherwise fallback to hardcoded data
+  const soil = llmData?.soilType || getFallbackSoilData(environmentData.soilType);
+  const weather = llmData?.weather || getFallbackWeatherData(environmentData.weather);
+  const climate = llmData?.climate || getFallbackClimateData(environmentData.climate);
 
   const steps = [
     { title: 'Soil Analysis', data: soil, icon: '🌍' },
@@ -101,22 +61,109 @@ export function EnvironmentInsights({ environmentData, playerProfile, onComplete
   ];
 
   useEffect(() => {
-    if (currentStep < steps.length) {
-      const timer = setTimeout(() => {
-        setCurrentStep(prev => prev + 1);
-      }, 2000);
-      return () => clearTimeout(timer);
-    } else {
-      const timer = setTimeout(() => {
-        setShowRecommendations(true);
-      }, 1000);
-      return () => clearTimeout(timer);
+    if (!isLoading && !error) {
+      if (currentStep < steps.length) {
+        const timer = setTimeout(() => {
+          setCurrentStep(prev => prev + 1);
+        }, 2000);
+        return () => clearTimeout(timer);
+      } else {
+        const timer = setTimeout(() => {
+          setShowRecommendations(true);
+        }, 1000);
+        return () => clearTimeout(timer);
+      }
     }
-  }, [currentStep, steps.length]);
+  }, [currentStep, steps.length, isLoading, error]);
 
   const handleContinue = () => {
     onComplete();
   };
+
+  // Fallback data functions (keeping the original hardcoded data as backup)
+  function getFallbackSoilData(soilType: string) {
+    const soilData = {
+      clay: {
+        emoji: '🟫',
+        name: 'Clay Soil',
+        color: 'amber',
+        description: 'Rich, holds water well, perfect for crops like maize and beans',
+        benefits: ['High water retention', 'Rich in nutrients', 'Good for root crops'],
+        challenges: ['Can become waterlogged', 'Hard when dry', 'Slow drainage']
+      },
+      sandy: {
+        emoji: '🟨',
+        name: 'Sandy Soil',
+        color: 'yellow',
+        description: 'Drains quickly, warms up fast, ideal for quick-growing crops',
+        benefits: ['Good drainage', 'Easy to work', 'Warms up quickly'],
+        challenges: ['Low water retention', 'Needs frequent watering', 'Low nutrients']
+      },
+      loamy: {
+        emoji: '🟤',
+        name: 'Loamy Soil',
+        color: 'orange',
+        description: 'Perfect balance of sand, silt, and clay - ideal for most crops',
+        benefits: ['Balanced drainage', 'High fertility', 'Excellent structure'],
+        challenges: ['Can be expensive', 'Needs maintenance', 'May compact over time']
+      }
+    };
+    return soilData[soilType as keyof typeof soilData] || soilData.clay;
+  }
+
+  function getFallbackWeatherData(weatherType: string) {
+    const weatherData = {
+      dry: {
+        emoji: '☀️',
+        name: 'Dry Season',
+        color: 'orange',
+        description: 'Low rainfall, requires irrigation and drought-resistant crops',
+        tips: ['Use drip irrigation', 'Plant drought-resistant varieties', 'Mulch to retain moisture']
+      },
+      rainy: {
+        emoji: '🌧️',
+        name: 'Rainy Season',
+        color: 'blue',
+        description: 'High rainfall, watch for flooding and plant diseases',
+        tips: ['Ensure good drainage', 'Watch for fungal diseases', 'Plant water-loving crops']
+      },
+      temperate: {
+        emoji: '⛅',
+        name: 'Moderate Weather',
+        color: 'green',
+        description: 'Balanced conditions, ideal for diverse crop varieties',
+        tips: ['Perfect for mixed farming', 'Good for most vegetables', 'Maintain regular watering']
+      }
+    };
+    return weatherData[weatherType as keyof typeof weatherData] || weatherData.temperate;
+  }
+
+  function getFallbackClimateData(climateType: string) {
+    const climateData = {
+      highland: {
+        emoji: '⛰️',
+        name: 'Highland Climate',
+        color: 'purple',
+        description: 'Cool temperatures, great for grains and vegetables',
+        crops: ['Maize', 'Wheat', 'Potatoes', 'Cabbage']
+      },
+      coastal: {
+        emoji: '🏖️',
+        name: 'Coastal Climate',
+        color: 'cyan',
+        description: 'Warm and humid, perfect for tropical crops',
+        crops: ['Coconuts', 'Cashews', 'Mangoes', 'Cassava']
+      },
+      tropical: {
+        emoji: '🌴',
+        name: 'Tropical Climate',
+        color: 'green',
+        description: 'Hot and humid, ideal for tropical agriculture',
+        crops: ['Bananas', 'Coffee', 'Sugarcane', 'Pineapples']
+      }
+    };
+    return climateData[climateType as keyof typeof climateData] || climateData.highland;
+  }
 
   return (
     <div className="w-full h-full bg-gradient-to-br from-green-200 via-blue-100 to-purple-100 flex items-center justify-center p-4 overflow-auto">
@@ -142,6 +189,25 @@ export function EnvironmentInsights({ environmentData, playerProfile, onComplete
             <p className="text-gray-700 text-lg">
               Let's analyze your farming conditions to optimize your crops! 🌾
             </p>
+
+            {/* Loading and Error States */}
+            {isLoading && (
+              <div className="mt-4 p-4 bg-blue-50 rounded-lg">
+                <div className="flex items-center justify-center space-x-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                  <span className="text-blue-700">Analyzing environmental data...</span>
+                </div>
+              </div>
+            )}
+
+            {error && (
+              <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <div className="flex items-center space-x-2">
+                  <span className="text-yellow-600">⚠️</span>
+                  <span className="text-yellow-700">{error}</span>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Analysis Steps */}
@@ -150,28 +216,28 @@ export function EnvironmentInsights({ environmentData, playerProfile, onComplete
               <motion.div
                 key={index}
                 initial={{ scale: 0, opacity: 0 }}
-                animate={currentStep >= index ? { scale: 1, opacity: 1 } : { scale: 0, opacity: 0 }}
+                animate={!isLoading && currentStep >= index ? { scale: 1, opacity: 1 } : { scale: 0, opacity: 0 }}
                 transition={{ delay: index * 0.5, type: 'spring', damping: 15 }}
               >
                 <Card className={`p-6 text-center border-2 ${
-                  currentStep >= index ? 'border-green-500 bg-green-50' : 'border-gray-200'
+                  !isLoading && currentStep >= index ? 'border-green-500 bg-green-50' : 'border-gray-200'
                 }`}>
                   <motion.div
-                    animate={currentStep === index ? { 
+                    animate={!isLoading && currentStep === index ? { 
                       scale: [1, 1.2, 1],
                       rotate: [0, 10, -10, 0]
                     } : {}}
                     transition={{ duration: 1, repeat: Infinity }}
                     className="text-4xl mb-3"
                   >
-                    {currentStep >= index ? step.data.emoji : step.icon}
+                    {!isLoading && currentStep >= index ? step.data.emoji : step.icon}
                   </motion.div>
                   
                   <h3 className="text-lg font-bold mb-2 text-gray-800">
                     {step.title}
                   </h3>
                   
-                  {currentStep >= index && (
+                  {!isLoading && currentStep >= index && (
                     <motion.div
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
@@ -192,7 +258,7 @@ export function EnvironmentInsights({ environmentData, playerProfile, onComplete
 
           {/* Detailed Recommendations */}
           <AnimatePresence>
-            {showRecommendations && (
+            {!isLoading && showRecommendations && (
               <motion.div
                 initial={{ y: 50, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
@@ -201,6 +267,9 @@ export function EnvironmentInsights({ environmentData, playerProfile, onComplete
               >
                 <h3 className="text-2xl text-center mb-6 text-green-800">
                   🎯 Farming Recommendations
+                  {llmData && (
+                    <span className="text-sm text-blue-600 ml-2">(AI-Powered Analysis)</span>
+                  )}
                 </h3>
 
                 <div className="grid md:grid-cols-2 gap-6">

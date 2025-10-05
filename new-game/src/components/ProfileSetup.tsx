@@ -3,22 +3,16 @@ import { motion } from 'motion/react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Card } from './ui/card';
-import farmerBoyAvatar from './Avatars/young_man.png';
-import farmerGirlAvatar from './Avatars/young_woman.png';
-import scientistAvatar from './Avatars/Scientist.png';
-import villageElderAvatar from './Avatars/Village Elder.png';
-import Avatar from './Avatars/Avatar.png';
-
 
 interface ProfileSetupProps {
   onComplete: (profile: { name: string; avatar: string }) => void;
 }
 
 const avatars = [
-  { id: 'farmer-boy', image: farmerBoyAvatar, name: 'Farmer Boy', description: 'Loves tractors and maize!' },
-  { id: 'farmer-girl', image: farmerGirlAvatar, name: 'Farmer Girl', description: 'Expert in sustainable farming!' },
-  { id: 'scientist', image: scientistAvatar, name: 'Scientist', description: 'Studies soil and weather!' },
-  { id: 'village-elder', image: villageElderAvatar, name: 'Village Elder', description: 'Wisdom of traditional farming!' }
+  { id: 'farmer-boy', emoji: '👨‍🌾', name: 'Farmer Boy', description: 'Loves tractors and maize!' },
+  { id: 'farmer-girl', emoji: '👩‍🌾', name: 'Farmer Girl', description: 'Expert in sustainable farming!' },
+  { id: 'scientist', emoji: '👨‍🔬', name: 'Scientist', description: 'Studies soil and weather!' },
+  { id: 'village-elder', emoji: '👴🏿', name: 'Village Elder', description: 'Wisdom of traditional farming!' }
 ];
 
 export function ProfileSetup({ onComplete }: ProfileSetupProps) {
@@ -104,13 +98,13 @@ export function ProfileSetup({ onComplete }: ProfileSetupProps) {
               animate={{ x: 0, opacity: 1 }}
               className="text-center"
             >
-              <motion.img
+              <motion.div
                 animate={{ y: [-5, 5, -5] }}
                 transition={{ duration: 2, repeat: Infinity }}
-                src={Avatar}
-                alt={selectedAvatarData.name}
-                className="w-16 h-16 mx-auto mb-4"
-              />
+                className="text-5xl mb-4"
+              >
+                {selectedAvatarData.emoji}
+              </motion.div>
               
               <h2 className="text-2xl mb-2 text-green-800">
                 Hello, {name}! 👋
@@ -133,7 +127,7 @@ export function ProfileSetup({ onComplete }: ProfileSetupProps) {
                         : 'border-gray-200 bg-white hover:border-green-300'
                     }`}
                   >
-                    <img src={avatar.image} alt={avatar.name} className="w-12 h-12 mx-auto mb-2" />
+                    <div className="text-3xl mb-2">{avatar.emoji}</div>
                     <div className="text-sm font-medium text-gray-800">{avatar.name}</div>
                     <div className="text-xs text-gray-600 mt-1">{avatar.description}</div>
                   </motion.div>

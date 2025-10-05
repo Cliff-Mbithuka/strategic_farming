@@ -102,7 +102,7 @@ export const LEVELS: Level[] = [
     xpReward: 75,
     icon: '🌦️',
     persona: 'dr-flora',
-    type: 'plant-tools',
+    type: 'plant-only',
     unlockRequirement: 2,
     area: 'weather-station',
     stages: [
@@ -117,9 +117,9 @@ export const LEVELS: Level[] = [
           { id: 'rainy', type: 'Rainy Plot', emoji: '🌧️', description: 'High rainfall area', color: 'bg-blue-300' }
         ],
         crops: [
-          { id: 'tomatoes', name: 'Tomatoes', emoji: '🍅', correctWeather: 'sunny', growthTime: 3 },
-          { id: 'lettuce', name: 'Lettuce', emoji: '🥬', correctWeather: 'shaded', growthTime: 2 },
-          { id: 'rice', name: 'Rice', emoji: '🌾', correctWeather: 'rainy', growthTime: 5 }
+          { id: 'tomatoes', name: 'Tomatoes', emoji: '🍅', correctSoil: 'sunny', growthTime: 3 },
+          { id: 'lettuce', name: 'Lettuce', emoji: '🥬', correctSoil: 'shaded', growthTime: 2 },
+          { id: 'rice', name: 'Rice', emoji: '🌾', correctSoil: 'rainy', growthTime: 5 }
         ],
         correctCombinations: { 'sunny': 'tomatoes', 'shaded': 'lettuce', 'rainy': 'rice' },
         hint: 'Tomatoes love sunshine, lettuce prefers cooler conditions!'
@@ -161,6 +161,11 @@ export const LEVELS: Level[] = [
         name: 'Choose Your Tools',
         instruction: 'Great! Now select the right tools for each planted field.',
         type: 'tools',
+        plots: [
+          { id: 'field1', type: 'Large Field', emoji: '🌾', description: 'Big farming area', color: 'bg-green-400' },
+          { id: 'field2', type: 'Dry Field', emoji: '🏜️', description: 'Needs irrigation', color: 'bg-yellow-500' },
+          { id: 'field3', type: 'Small Plot', emoji: '🌱', description: 'Hand farming area', color: 'bg-green-300' }
+        ],
         tools: [
           { id: 'tractor', name: 'Tractor', emoji: '🚜', description: 'For large scale farming', useCase: 'Large areas', correctFor: ['field1'] },
           { id: 'irrigation', name: 'Irrigation', emoji: '💧', description: 'Water delivery system', useCase: 'Dry areas', correctFor: ['field2'] },
