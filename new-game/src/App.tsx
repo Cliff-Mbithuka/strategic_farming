@@ -40,6 +40,16 @@ export interface GameData {
 export default function App() {
   const [gameState, setGameState] = useState<GameState>('login');
   const [showTutorial, setShowTutorial] = useState(false);
+  const [unlockedFeatures, setUnlockedFeatures] = useState<string[]>(['basic-farm']);
+  const [gameStats, setGameStats] = useState({
+    totalGamesPlayed: 0,
+    perfectScoreGames: 0,
+    fastestCompletion: null,
+    averageScore: 0,
+    currentStreak: 0,
+    bestStreak: 0
+  });
+  const [achievements, setAchievements] = useState<string[]>([]);
   const [playerProfile, setPlayerProfile] = useState<PlayerProfile>({
     name: '',
     avatar: 'farmer-boy',
@@ -105,24 +115,102 @@ export default function App() {
     setGameState('game');
   };
 
+  const calculateScore = (baseScore: number, moves: number, completed: boolean, timeBonus: number = 0) => {
+    let score = baseScore;
+
+    // Perfect score bonus
+    if (completed && moves <= 3) score += 30;
+
+    // Streak bonus
+    if (gameStats.currentStreak > 1) score += Math.min(gameStats.currentStreak * 5, 50);
+
+    // Time bonus for future implementation
+    score += timeBonus;
+
+    return Math.min(score, 100);
+  };
+
+  const checkAchievements = (results: Partial<GameData>, currentProfile: PlayerProfile) => {
+    const newAchievements = [...achievements];
+    const newBadges = [...currentProfile.badges];
+
+    // Perfect score streak
+    if ((results.score || 0) >= 95 && gameStats.currentStreak >= 5 && !newAchievements.includes('perfect-streak')) {
+      newAchievements.push('perfect-streak');
+    }
+
+    // Level completion badges
+    if (results.completedCorrectly) {
+      if (gameData.currentLevel === 1 && !newBadges.includes('soil-pro')) newBadges.push('soil-pro');
+      if (gameData.currentLevel === 3 && !newBadges.includes('tool-master')) newBadges.push('tool-master');
+      if (gameData.currentLevel === 5 && !newBadges.includes('sustainability-hero')) newBadges.push('sustainability-hero');
+    }
+
+    // Speed farmer (low moves)
+    if ((results.moves || 0) <= 2 && !newAchievements.includes('speed-farmer')) {
+      newAchievements.push('speed-farmer');
+    }
+
+    return { newAchievements, newBadges };
+  };
+
   const handleGameComplete = (results: Partial<GameData>) => {
     setGameData(prev => ({ ...prev, ...results }));
-    
-    // Award XP and badges based on performance
-    const newXP = results.completedCorrectly ? 50 : 20;
-    const newBadges = [...playerProfile.badges];
-    
-    if (results.completedCorrectly && gameData.currentLevel === 1 && !newBadges.includes('soil-pro')) {
-      newBadges.push('soil-pro');
+
+    // Enhanced scoring
+    const baseScore = results.completedCorrectly ? 70 : Math.max(30, 100 - (results.moves || 0) * 5);
+    const enhancedScore = calculateScore(baseScore, results.moves || 0, results.completedCorrectly || false);
+
+    // Update game stats
+    setGameStats(prev => {
+      const newStats = { ...prev };
+      newStats.totalGamesPlayed += 1;
+
+      if (results.completedCorrectly) {
+        newStats.currentStreak += 1;
+        newStats.bestStreak = Math.max(newStats.bestStreak, newStats.currentStreak);
+
+        if (enhancedScore >= 95) newStats.perfectScoreGames += 1;
+      } else {
+        newStats.currentStreak = 0;
+      }
+
+      // Calculate average score
+      const totalScorePoints = (prev.averageScore * prev.totalGamesPlayed) + enhancedScore;
+      newStats.averageScore = totalScorePoints / newStats.totalGamesPlayed;
+
+      return newStats;
+    });
+
+    // Check for achievements and badges
+    const { newAchievements, newBadges } = checkAchievements(results, playerProfile);
+
+    if (newAchievements.length > achievements.length) {
+      setAchievements(newAchievements);
     }
-    
+
+    // Award XP and badges based on performance
+    const baseXP = results.completedCorrectly ? 50 : 20;
+    const achievementBonus = newAchievements.length - achievements.length;
+    const newXP = baseXP + (achievementBonus * 15) + ((results.score || 0) >= 90 ? 10 : 0);
+
+    // Unlock features based on progress
+    const newUnlockedFeatures = [...unlockedFeatures];
+    if (playerProfile.level >= 3 && !newUnlockedFeatures.includes('decorative-farm')) {
+      newUnlockedFeatures.push('decorative-farm');
+    }
+    if (gameStats.totalGamesPlayed >= 5 && !newUnlockedFeatures.includes('statistics')) {
+      newUnlockedFeatures.push('statistics');
+    }
+
     setPlayerProfile(prev => ({
       ...prev,
       xp: prev.xp + newXP,
       level: results.completedCorrectly ? Math.max(prev.level, gameData.currentLevel + 1) : prev.level,
       badges: newBadges
     }));
-    
+
+    setUnlockedFeatures(newUnlockedFeatures);
     setGameState('results');
   };
 
@@ -145,42 +233,41 @@ export default function App() {
   };
 
   return (
-    <div className="w-full h-screen bg-gradient-to-b from-sky-200 to-green-100 overflow-hidden relative">
-      {/* Background Elements */}
+    <div className="w-full h-screen bg-gradient-to-br from-sky-300 via-green-200 to-yellow-100 overflow-hidden relative">
+      {/* Enhanced Background Elements */}
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-10 left-10 w-8 h-8 bg-yellow-300 rounded-full opacity-80 animate-pulse" />
-        <div className="absolute top-20 right-20 w-6 h-6 bg-white rounded-full opacity-60 animate-bounce" />
-        <div className="absolute bottom-20 left-1/4 w-4 h-4 bg-green-300 rounded-full opacity-70" />
+        <motion.div
+          animate={{ y: [-10, 10, -10], x: [-5, 5, -5] }}
+          transition={{ duration: 4, repeat: Infinity }}
+          className="absolute top-10 left-10 w-10 h-10 bg-gradient-to-r from-yellow-300 to-orange-300 rounded-full opacity-90 shadow-lg"
+        />
+        <motion.div
+          animate={{ y: [-15, 15, -15], rotate: [0, 180, 360] }}
+          transition={{ duration: 6, repeat: Infinity }}
+          className="absolute top-20 right-20 w-8 h-8 bg-white rounded-full opacity-70 shadow-md"
+        />
+        <motion.div
+          animate={{ scale: [1, 1.2, 1], y: [-8, 8, -8] }}
+          transition={{ duration: 5, repeat: Infinity }}
+          className="absolute bottom-20 left-1/4 w-6 h-6 bg-gradient-to-r from-green-300 to-emerald-300 rounded-full opacity-80"
+        />
+        <motion.div
+          animate={{ x: [-20, 20, -20] }}
+          transition={{ duration: 8, repeat: Infinity }}
+          className="absolute top-32 left-20 w-12 h-3 bg-green-500 rounded-full opacity-60"
+        />
+        <motion.div
+          animate={{ scale: [0.8, 1.3, 0.8] }}
+          transition={{ duration: 7, repeat: Infinity }}
+          className="absolute bottom-32 right-1/3 w-5 h-5 bg-blue-300 rounded-full opacity-70"
+        />
       </div>
 
-      {/* Debug Panel */}
-      <div className="absolute top-4 left-4 z-50 bg-black/80 text-white p-2 rounded text-xs space-y-1">
-        <p>State: {gameState}</p>
-        <p>Name: {playerProfile.name}</p>
-        <p>Location: {playerProfile.location}</p>
-        <div className="flex space-x-1">
-          <button 
-            onClick={() => setGameState('login')} 
-            className="bg-red-500 px-2 py-1 rounded text-xs"
-          >
-            Reset
-          </button>
-          <button 
-            onClick={() => {
-              setPlayerProfile(prev => ({ 
-                ...prev, 
-                name: 'Test Farmer', 
-                location: 'Nairobi',
-                avatar: 'farmer-boy'
-              }));
-              setGameState('levelMap');
-            }} 
-            className="bg-blue-500 px-2 py-1 rounded text-xs"
-          >
-            Skip to Map
-          </button>
+        <div className="space-y-1 text-xs">
+          <p><span className="font-medium">State:</span> {gameState}</p>
+          <p><span className="font-medium">Name:</span> {playerProfile.name}</p>
+          <p><span className="font-medium">Location:</span> {playerProfile.location}</p>
         </div>
-      </div>
 
       <AnimatePresence mode="wait">
         {gameState === 'login' && (
@@ -216,12 +303,14 @@ export default function App() {
             transition={{ type: 'spring', damping: 20 }}
             className="w-full h-full relative"
           >
-            <button 
-              onClick={() => setGameState('welcome')} 
-              className="absolute top-4 left-4 z-10 bg-gray-500 text-white px-3 py-1 rounded text-sm"
+            <motion.button
+              onClick={() => setGameState('welcome')}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="absolute top-4 left-4 z-10 bg-white/90 backdrop-blur-sm text-gray-700 px-4 py-2 rounded-xl shadow-lg border border-gray-200 text-sm font-medium hover:bg-white hover:shadow-xl transition-all duration-200"
             >
               ← Back
-            </button>
+            </motion.button>
             <ProfileSetup onComplete={handleProfileComplete} />
           </motion.div>
         )}
@@ -235,12 +324,14 @@ export default function App() {
             transition={{ type: 'spring', damping: 20 }}
             className="w-full h-full relative"
           >
-            <button 
-              onClick={() => setGameState('profile')} 
-              className="absolute top-4 left-4 z-10 bg-gray-500 text-white px-3 py-1 rounded text-sm"
+            <motion.button
+              onClick={() => setGameState('profile')}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="absolute top-4 left-4 z-10 bg-white/90 backdrop-blur-sm text-gray-700 px-4 py-2 rounded-xl shadow-lg border border-gray-200 text-sm font-medium hover:bg-white hover:shadow-xl transition-all duration-200"
             >
               ← Back
-            </button>
+            </motion.button>
             <LocationSetup onComplete={handleLocationComplete} />
           </motion.div>
         )}
@@ -253,12 +344,14 @@ export default function App() {
             exit={{ scale: 0.8, opacity: 0 }}
             className="w-full h-full relative"
           >
-            <button 
-              onClick={() => setGameState('location')} 
-              className="absolute top-4 left-4 z-10 bg-gray-500 text-white px-3 py-1 rounded text-sm"
+            <motion.button
+              onClick={() => setGameState('location')}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="absolute top-4 left-4 z-10 bg-white/90 backdrop-blur-sm text-gray-700 px-4 py-2 rounded-xl shadow-lg border border-gray-200 text-sm font-medium hover:bg-white hover:shadow-xl transition-all duration-200"
             >
               ← Back
-            </button>
+            </motion.button>
             <EnvironmentInsights 
               environmentData={environmentData}
               playerProfile={playerProfile}
@@ -309,9 +402,11 @@ export default function App() {
             exit={{ scale: 0.5, opacity: 0 }}
             className="w-full h-full"
           >
-            <ResultsScreen 
+            <ResultsScreen
               gameData={gameData}
               playerProfile={playerProfile}
+              gameStats={gameStats}
+              newAchievements={achievements}
               onNext={handleNextLevel}
               onRetry={() => setGameState('game')}
             />

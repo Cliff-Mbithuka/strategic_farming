@@ -3,10 +3,14 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { Badge } from './ui/badge';
+import { Progress } from './ui/progress';
+import { AchievementNotification } from './AchievementNotification';
 
 interface ResultsScreenProps {
   gameData: any;
   playerProfile: any;
+  gameStats?: any;
+  newAchievements?: string[];
   onNext: () => void;
   onRetry: () => void;
 }
@@ -34,10 +38,12 @@ const didYouKnowFacts = [
   }
 ];
 
-export function ResultsScreen({ gameData, playerProfile, onNext, onRetry }: ResultsScreenProps) {
+export function ResultsScreen({ gameData, playerProfile, gameStats, newAchievements = [], onNext, onRetry }: ResultsScreenProps) {
   const [showConfetti, setShowConfetti] = useState(false);
   const [showFactCard, setShowFactCard] = useState(false);
   const [currentFact, setCurrentFact] = useState(0);
+  const [showAchievementNotification, setShowAchievementNotification] = useState(newAchievements.length > 0);
+  const [showDetailedStats, setShowDetailedStats] = useState(false);
 
   useEffect(() => {
     if (gameData.completedCorrectly) {
@@ -60,6 +66,13 @@ export function ResultsScreen({ gameData, playerProfile, onNext, onRetry }: Resu
 
   return (
     <div className="w-full h-full bg-gradient-to-br from-yellow-100 via-green-100 to-blue-100 flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Achievement Notification */}
+      {showAchievementNotification && (
+        <AchievementNotification
+          achievements={newAchievements}
+          onClose={() => setShowAchievementNotification(false)}
+        />
+      )}
       {/* Confetti Animation */}
       {showConfetti && (
         <div className="absolute inset-0 pointer-events-none">
@@ -122,20 +135,21 @@ export function ResultsScreen({ gameData, playerProfile, onNext, onRetry }: Resu
             <div className={`text-2xl mb-2 ${performance.color}`}>
               {performance.emoji} {performance.message}
             </div>
-            
-            <div className="grid grid-cols-3 gap-4 mb-6">
+
+            {/* Basic Stats Grid */}
+            <div className="grid grid-cols-3 gap-4 mb-4">
               <div className="bg-blue-50 p-4 rounded-xl">
                 <div className="text-2xl text-blue-600 mb-1">⭐</div>
                 <div className="text-xl font-bold text-blue-800">{gameData.score}</div>
                 <div className="text-sm text-blue-600">Score</div>
               </div>
-              
+
               <div className="bg-purple-50 p-4 rounded-xl">
                 <div className="text-2xl text-purple-600 mb-1">🎯</div>
                 <div className="text-xl font-bold text-purple-800">{gameData.moves}</div>
                 <div className="text-sm text-purple-600">Moves</div>
               </div>
-              
+
               <div className="bg-green-50 p-4 rounded-xl">
                 <div className="text-2xl text-green-600 mb-1">🏆</div>
                 <div className="text-xl font-bold text-green-800">{playerProfile.xp}</div>
@@ -143,18 +157,107 @@ export function ResultsScreen({ gameData, playerProfile, onNext, onRetry }: Resu
               </div>
             </div>
 
-            {/* New Badges */}
-            {gameData.completedCorrectly && (
+            {/* Streak & Progress Info */}
+            {gameStats && (
+              <div className="bg-gradient-to-r from-orange-50 to-red-50 p-4 rounded-xl mb-4 border border-orange-200">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-lg text-orange-800 flex items-center">
+                    🔥 Current Streak: <span className="font-bold ml-1">{gameStats.currentStreak}</span>
+                  </span>
+                  <span className="text-sm text-orange-600">
+                    Best: {gameStats.bestStreak}
+                  </span>
+                </div>
+                <Progress
+                  value={(gameStats.currentStreak / Math.max(15, gameStats.bestStreak + 5)) * 100}
+                  className="h-3 mb-2"
+                />
+                <div className="text-xs text-orange-600">
+                  Keep playing perfectly to extend your streak!
+                </div>
+              </div>
+            )}
+
+            {/* Detailed Stats Toggle */}
+            <div className="text-center mb-4">
+              <motion.button
+                onClick={() => setShowDetailedStats(!showDetailedStats)}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="text-sm text-gray-600 hover:text-gray-800 underline"
+              >
+                {showDetailedStats ? 'Hide' : 'Show'} Detailed Stats 📊
+              </motion.button>
+            </div>
+
+            {/* Detailed Stats */}
+            <AnimatePresence>
+              {showDetailedStats && gameStats && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  className="mb-6 overflow-hidden"
+                >
+                  <Card className="p-4 bg-gray-50 border-2 border-gray-200">
+                    <h3 className="text-lg font-bold text-gray-800 mb-3 flex items-center">
+                      📊 Your Farming Stats
+                    </h3>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <div className="text-gray-600">Games Played</div>
+                        <div className="text-xl font-bold text-blue-600">{gameStats.totalGamesPlayed}</div>
+                      </div>
+                      <div>
+                        <div className="text-gray-600">Perfect Scores</div>
+                        <div className="text-xl font-bold text-yellow-600">{gameStats.perfectScoreGames}</div>
+                      </div>
+                      <div>
+                        <div className="text-gray-600">Average Score</div>
+                        <div className="text-xl font-bold text-purple-600">{Math.round(gameStats.averageScore)}</div>
+                      </div>
+                      <div>
+                        <div className="text-gray-600">Success Rate</div>
+                        <div className="text-xl font-bold text-green-600">
+                          {gameStats.totalGamesPlayed > 0 ? Math.round((playerProfile.level / (gameStats.totalGamesPlayed + 1)) * 100) : 0}%
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* New Achievements */}
+            {newAchievements.length > 0 && (
               <motion.div
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ delay: 0.8, type: 'spring', damping: 10 }}
                 className="mb-6"
               >
-                <div className="text-lg mb-3 text-gray-700">🎖️ New Achievement!</div>
-                <Badge className="px-4 py-2 bg-yellow-100 text-yellow-800 border-yellow-300 text-lg">
-                  🌍 Soil Pro
-                </Badge>
+                <div className="text-lg mb-3 text-gray-700 flex items-center">
+                  🎉 <span className="ml-2">Achievement{newAchievements.length > 1 ? 's' : ''} Unlocked!</span>
+                </div>
+                <div className="flex flex-wrap gap-2 justify-center">
+                  {newAchievements.slice(0, 3).map((achievement, index) => (
+                    <motion.div
+                      key={achievement}
+                      initial={{ scale: 0, rotate: -180 }}
+                      animate={{ scale: 1, rotate: 0 }}
+                      transition={{ delay: 0.9 + index * 0.1, type: 'spring', damping: 15 }}
+                    >
+                      <Badge className="px-3 py-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white border-yellow-300 text-sm font-medium">
+                        🏆 {achievement.replace('-', ' ').toUpperCase()}
+                      </Badge>
+                    </motion.div>
+                  ))}
+                  {newAchievements.length > 3 && (
+                    <Badge variant="outline" className="px-3 py-2 border-gray-400 text-gray-600">
+                      +{newAchievements.length - 3} more
+                    </Badge>
+                  )}
+                </div>
               </motion.div>
             )}
           </motion.div>
