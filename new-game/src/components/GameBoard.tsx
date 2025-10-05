@@ -22,7 +22,7 @@ export function GameBoard({ level, playerProfile, environmentData, onComplete, o
   const [droppedItems, setDroppedItems] = useState<{[key: string]: string}>({});
   const [attempts, setAttempts] = useState(0);
   const [showHint, setShowHint] = useState(false);
-  const [animatingCrop, setAnimatingCrop] = useState<string | null>(null);
+  const [animatingItem, setAnimatingItem] = useState<string | null>(null);
   const [stageResults, setStageResults] = useState<boolean[]>([]);
 
   const currentLevel = getLevelById(level);
@@ -36,22 +36,22 @@ export function GameBoard({ level, playerProfile, environmentData, onComplete, o
     setGamePhase('playing');
   };
 
-  const handleCropClick = (cropId: string, soilId: string) => {
+  const handleItemClick = (itemId: string, plotId: string) => {
     // Remove from previous position if it was dropped somewhere
     const newDroppedItems = { ...droppedItems };
     Object.keys(newDroppedItems).forEach(key => {
-      if (newDroppedItems[key] === cropId) {
+      if (newDroppedItems[key] === itemId) {
         delete newDroppedItems[key];
       }
     });
 
     // Add to new position
-    newDroppedItems[soilId] = cropId;
+    newDroppedItems[plotId] = itemId;
     setDroppedItems(newDroppedItems);
 
-    // Animate the crop
-    setAnimatingCrop(cropId);
-    setTimeout(() => setAnimatingCrop(null), 500);
+    // Animate the item
+    setAnimatingItem(itemId);
+    setTimeout(() => setAnimatingItem(null), 500);
 
     setAttempts(prev => prev + 1);
   };
@@ -96,10 +96,13 @@ export function GameBoard({ level, playerProfile, environmentData, onComplete, o
     }, 2000);
   };
 
+  const getAllItems = () => {
+    return currentStage.type === 'plant' ? currentStage.crops || [] : currentStage.tools || [];
+  };
+
   const getAvailableItems = () => {
     const usedItems = Object.values(droppedItems);
-    const items = currentStage.type === 'plant' ? currentStage.crops || [] : currentStage.tools || [];
-    return items.filter(item => !usedItems.includes(item.id));
+    return getAllItems().filter(item => !usedItems.includes(item.id));
   };
 
   return (
@@ -182,7 +185,7 @@ export function GameBoard({ level, playerProfile, environmentData, onComplete, o
                 {getAvailableItems().map((item) => (
                   <motion.div
                     key={item.id}
-                    animate={animatingCrop === item.id ? { scale: [1, 1.2, 1] } : {}}
+                    animate={animatingItem === item.id ? { scale: [1, 1.2, 1] } : {}}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     className="p-4 bg-white rounded-xl shadow-lg border-2 border-gray-200 cursor-pointer transition-all hover:border-green-300"
@@ -238,7 +241,7 @@ export function GameBoard({ level, playerProfile, environmentData, onComplete, o
                               return (
                                 <motion.button
                                   key={item.id}
-                                  onClick={() => !isUsed && handleCropClick(item.id, plot.id)}
+                                  onClick={() => !isUsed && handleItemClick(item.id, plot.id)}
                                   disabled={isUsed}
                                   whileHover={!isUsed ? { scale: 1.1 } : {}}
                                   whileTap={!isUsed ? { scale: 0.9 } : {}}
@@ -263,10 +266,10 @@ export function GameBoard({ level, playerProfile, environmentData, onComplete, o
                           className="text-center"
                         >
                           <div className="text-4xl mb-1">
-                            {getAvailableItems().find(c => c.id === droppedItems[plot.id])?.emoji}
+                            {getAllItems().find(c => c.id === droppedItems[plot.id])?.emoji}
                           </div>
                           <p className="text-sm font-medium">
-                            {getAvailableItems().find(c => c.id === droppedItems[plot.id])?.name}
+                            {getAllItems().find(c => c.id === droppedItems[plot.id])?.name}
                           </p>
                           <Button
                             onClick={() => {
