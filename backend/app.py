@@ -386,17 +386,20 @@ def signin():
         }), 200
 
     # Fallback to legacy users table
-    cur.execute("SELECT userId, firstName, lastName, email FROM legacy_users WHERE email = %s", (email,))
+    cur.execute("SELECT userId, firstName, lastName, email, password FROM legacy_users WHERE email = %s", (email,))
     user = cur.fetchone()
 
     if not user:
         return jsonify({"error": "Invalid credentials"}), 401
 
+    user_id, first_name, last_name, user_email, stored_password_hash = user
+
+    # Check password hash
+    if hash_password(str(password)) != stored_password_hash:
+        return jsonify({"error": "Invalid credentials"}), 401
+
     cur.close()
     conn.close()
-
-    # For demo, accept any password for legacy users too
-    user_id, first_name, last_name, email = user
 
     return jsonify({
         "message": "Login successful",
@@ -404,7 +407,7 @@ def signin():
             "userId": user_id,
             "firstName": first_name,
             "lastName": last_name,
-            "email": email,
+            "email": user_email,
         },
     }), 200
 
@@ -467,6 +470,7 @@ def get_dashboard_data(user_id):
                 u.first_name,
                 u.last_name,
                 uc.total_points as credit_points,
+                uc.current_rank,
                 fh.overall_health_score as farm_health,
                 (SELECT COUNT(*) FROM farm_neighbors WHERE user_id = u.id) as active_neighbors,
                 (SELECT json_build_object('name', market_name, 'distance', distance_km)
@@ -481,10 +485,11 @@ def get_dashboard_data(user_id):
 
         result = cur.fetchone()
         if result:
-            first_name, last_name, credit_points, farm_health, active_neighbors, nearest_market = result
+            first_name, last_name, credit_points, current_rank, farm_health, active_neighbors, nearest_market = result
 
             # Handle default values for missing data
             credit_points = credit_points or 1247
+            current_rank = current_rank or "Gold"
             farm_health = farm_health or 85.0
             active_neighbors = active_neighbors or 0
             nearest_market = nearest_market or {"name": "Green Valley Market", "distance": 12}
@@ -496,6 +501,7 @@ def get_dashboard_data(user_id):
                 "firstName": first_name,
                 "lastName": last_name,
                 "creditPoints": int(credit_points),
+                "currentRank": current_rank,
                 "farmHealth": float(farm_health),
                 "activeNeighbors": int(active_neighbors),
                 "nearestMarket": nearest_market

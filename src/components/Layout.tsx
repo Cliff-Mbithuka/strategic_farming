@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useContext } from "react";
 import { SidebarProvider, Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarHeader, SidebarFooter } from "./ui/sidebar";
 import { LayoutDashboard, Satellite, Users, Bug, ShoppingCart, MessageSquare, Coins, Menu, Sprout } from "lucide-react";
 import { Button } from "./ui/button";
@@ -12,12 +12,15 @@ import { ChatCopilot } from "./ChatCopilot";
 import { CreditSystem } from "./CreditSystem";
 import { FloatingCopilot } from "./FloatingCopilot";
 import { CopilotProvider } from "./CopilotContext";
+import { AuthContext } from "../contexts/AuthContext";
 
 type View = "dashboard" | "satellite" | "neighbors" | "pests" | "market" | "chat" | "credits";
 
 export default function Layout() {
   const [currentView, setCurrentView] = useState<View>("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const auth = useContext(AuthContext);
+  const user = auth?.user;
 
   const menuItems = [
     { id: "dashboard" as View, label: "Dashboard", icon: LayoutDashboard },
@@ -93,11 +96,13 @@ export default function Layout() {
           <SidebarFooter className="border-t p-4">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-primary-foreground">
-                JD
+                {user?.firstName?.charAt(0) || "?"} {user?.lastName?.charAt(0) || "?"}
               </div>
               <div className="flex-1">
-                <p className="font-medium text-foreground">Farmer John</p>
-                <p className="text-xs">Gold Member</p>
+                <p className="font-medium text-foreground">
+                  {user?.firstName} {user?.lastName}
+                </p>
+                <p className="text-xs">{user?.currentRank || "Member"} Member</p>
               </div>
             </div>
           </SidebarFooter>

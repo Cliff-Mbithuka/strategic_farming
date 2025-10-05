@@ -13,12 +13,16 @@ This script initializes a new user with all required data including:
 
 import os
 import uuid
+import hashlib
 import psycopg2
 from datetime import datetime, date, timedelta
 from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
+
+def hash_password(password):
+    return hashlib.sha256(password.encode()).hexdigest()
 
 def create_tables():
     """Create all required database tables in correct dependency order"""
@@ -190,10 +194,10 @@ def initialize_user_data(user_data=None):
     if user_data is None:
         user_data = {
             'id': str(uuid.uuid4()),
-            'username': 'farmerjohn',
-            'email': 'john@farm.com',
-            'first_name': 'John',
-            'last_name': 'Doe',
+            'username': 'markfarmer',
+            'email': 'mark@gmail.com',
+            'first_name': 'Mark',
+            'last_name': 'Farmer',
             'farm_name': 'Green Valley Farm',
             'farm_latitude': 40.7128,
             'farm_longitude': -74.0060,
@@ -223,6 +227,20 @@ def initialize_user_data(user_data=None):
             user_data['farm_latitude'],
             user_data['farm_longitude'],
             user_data['farm_size_hectares']
+        ))
+
+        # 1b. Insert legacy user for authentication
+        hashed_password = hash_password('1234')
+        cur.execute("""
+            INSERT INTO legacy_users (userId, firstName, lastName, email, password)
+            VALUES (%s, %s, %s, %s, %s)
+            ON CONFLICT (email) DO NOTHING
+        """, (
+            user_id,  # Use same ID for consistency
+            user_data['first_name'],
+            user_data['last_name'],
+            user_data['email'],
+            hashed_password
         ))
 
         # 2. Insert farm zones

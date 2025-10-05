@@ -120,6 +120,7 @@ export function FloatingCopilot() {
     } else if (lowerQuestion.includes("farm health")) {
       return "🌟 Your farm health is excellent at 94%!\n\nThis score is calculated from:\n• Soil conditions: 98% optimal\n• Crop vitality: 92%\n• Pest management: 88%\n• Weather alignment: 96%\n\n💡 Tip: Address the minor pest risk in Zones A&B to reach 98% overall health!";
     } else if (lowerQuestion.includes("active neighbors")) {
+
       return "👥 You have 23 active farmers in your network!\n\nTop collaboration opportunities:\n1. Sarah (2km) - Joint pest control saves KSH 67,500\n2. Mike (3km) - Equipment sharing earns +200pts\n3. Lisa (5km) - Market coordination adds 15% revenue\n\n🤝 Coordinating with all 3 = +530 points + KSH 180,000 in savings!";
     } else if (lowerQuestion.includes("nearest market") || lowerQuestion.includes("green valley")) {
       return "🏪 Green Valley Market (12km away)\n\nCurrent demand:\n• Tomatoes: KSH 675/kg (HIGH) +7.1%\n• Peppers: KSH 870/kg (MEDIUM) +5.5%\n• Wheat: KSH 480/kg (STABLE)\n\n📊 Your projected revenue this week: KSH 427,500\n💡 Transport cost optimization available - save KSH 18,000 by coordinating with neighbors!";
