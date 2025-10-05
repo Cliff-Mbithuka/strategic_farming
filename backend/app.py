@@ -26,28 +26,6 @@ def create_tables():
     conn = get_db_connection()
     cur = conn.cursor()
 
-    # First drop all tables in reverse dependency order to ensure clean recreation
-    drop_statements = [
-        "DROP TABLE IF EXISTS nasa_ai_recommendations CASCADE;",
-        "DROP TABLE IF EXISTS nasa_soil_data CASCADE;",
-        "DROP TABLE IF EXISTS nasa_weather_forecast CASCADE;",
-        "DROP TABLE IF EXISTS nasa_vegetation_data CASCADE;",
-        "DROP TABLE IF EXISTS nasa_weather_data CASCADE;",
-        "DROP TABLE IF EXISTS farm_health_metrics CASCADE;",
-        "DROP TABLE IF EXISTS farm_neighbors CASCADE;",
-        "DROP TABLE IF EXISTS farm_zones CASCADE;",
-        "DROP TABLE IF EXISTS user_credits CASCADE;",
-        "DROP TABLE IF EXISTS market_data CASCADE;",
-        "DROP TABLE IF EXISTS users CASCADE;",
-        "DROP TABLE IF EXISTS user_metrics CASCADE;",
-        "DROP TABLE IF EXISTS soil_conditions CASCADE;",
-        "DROP TABLE IF EXISTS weather_forecast CASCADE;",
-        "DROP TABLE IF EXISTS legacy_users CASCADE;",
-    ]
-
-    for drop_stmt in drop_statements:
-        cur.execute(drop_stmt)
-
     # Create tables one by one in dependency order
     tables_created = []
 
@@ -293,7 +271,14 @@ def create_tables():
         cur.close()
         conn.close()
 
-create_tables()
+
+import click
+
+@app.cli.command("init-db")
+def init_db_command():
+    """Clear the existing data and create new tables."""
+    create_tables()
+    click.echo("Initialized the database.")
 
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()

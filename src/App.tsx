@@ -4,6 +4,7 @@ import SignIn from "./components/SignIn";
 import SignUp from "./components/SignUp";
 import Layout from "./components/Layout";
 import ProtectedRoute from "./components/ProtectedRoute";
+import SatelliteView from "./components/SatelliteView";
 
 export default function App() {
   return (
@@ -12,6 +13,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<SignIn />} />
           <Route path="/signup" element={<SignUp />} />
+          <Route path="/satellite" element={<SatelliteView />} />
           <Route
             path="/dashboard"
             element={

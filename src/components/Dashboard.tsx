@@ -7,6 +7,7 @@ import { Badge } from "./ui/badge";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
 import { useCopilot } from "./CopilotContext";
 import { AuthContext } from "../contexts/AuthContext";
+import SatelliteView from "./SatelliteView";
 
 interface DashboardData {
   firstName: string;

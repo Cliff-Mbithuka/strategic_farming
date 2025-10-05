@@ -4,7 +4,7 @@ import { SidebarProvider, Sidebar, SidebarContent, SidebarGroup, SidebarGroupCon
 import { LayoutDashboard, Satellite, Users, Bug, ShoppingCart, MessageSquare, Coins, Menu, Sprout } from "lucide-react";
 import { Button } from "./ui/button";
 import { Dashboard } from "./Dashboard";
-import { SatelliteView } from "./SatelliteView";
+import SatelliteView from "./SatelliteView";
 import { NeighborCrops } from "./NeighborCrops";
 import { PestPrediction } from "./PestPrediction";
 import { MarketPlace } from "./MarketPlace";
@@ -64,7 +64,7 @@ export default function Layout() {
                 <Sprout className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h2 className="font-semibold">AgriSmart</h2>
+                <h2 className="font-semibold">M-kulima</h2>
                 <p className="text-xs text-muted-foreground">Smart Farming Platform</p>
               </div>
             </div>
@@ -122,7 +122,7 @@ export default function Layout() {
               <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
                 <Sprout className="h-5 w-5 text-white" />
               </div>
-              <h2 className="font-semibold">AgriSmart</h2>
+              <h2 className="font-semibold">M-kulima</h2>
             </div>
           </div>
 
