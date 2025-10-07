@@ -195,11 +195,13 @@ export function Dashboard() {
           <CardDescription>Real-time environmental data overlayed on your land</CardDescription>
         </CardHeader>
         <CardContent className="p-0">
-          <div className="relative">
-            <SatelliteView />
-            
+          <div className="relative h-[400px]">
+            <div className="absolute inset-0" style={{ zIndex: 1000 }}>
+              <SatelliteView />
+            </div>
+
             {/* Data Overlays */}
-            <div className="absolute inset-0 pointer-events-none">
+            <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 1001 }}>
               {/* Top Left - Time & Date */}
               <div className="absolute top-4 left-4 bg-black/70 backdrop-blur-sm text-white rounded-lg p-3 space-y-1">
                 <div className="flex items-center gap-2">

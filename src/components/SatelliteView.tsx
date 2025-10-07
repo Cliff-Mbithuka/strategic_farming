@@ -15,7 +15,7 @@ const SatelliteView: React.FC = () => {
   const center: [number, number] = [-0.232681, 35.698053];
 
   return (
-    <MapContainer center={center} zoom={17} style={{ height: '100vh', width: '100%' }}>
+    <MapContainer center={center} zoom={17} style={{ height: '100%', width: '100%' }}>
       <TileLayer
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
