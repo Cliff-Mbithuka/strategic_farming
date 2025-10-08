@@ -295,27 +295,6 @@ export function Dashboard() {
                 </div>
               </div>
 
-              {/* Center - Land Annotations */}
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-                <div className="relative">
-                  {/* Zone markers */}
-                  <div className="absolute -top-20 -left-16 bg-green-500/80 backdrop-blur-sm text-white rounded-full w-12 h-12 flex items-center justify-center text-xs font-bold">
-                    A
-                    <div className="absolute inset-0 rounded-full border-2 border-green-400 animate-ping"></div>
-                  </div>
-                  <div className="absolute -top-12 left-20 bg-green-500/80 backdrop-blur-sm text-white rounded-full w-12 h-12 flex items-center justify-center text-xs font-bold">
-                    B
-                    <div className="absolute inset-0 rounded-full border-2 border-green-400 animate-ping" style={{ animationDelay: '0.5s' }}></div>
-                  </div>
-                  <div className="absolute top-16 -left-20 bg-yellow-500/80 backdrop-blur-sm text-white rounded-full w-12 h-12 flex items-center justify-center text-xs font-bold">
-                    C
-                    <div className="absolute inset-0 rounded-full border-2 border-yellow-400 animate-ping" style={{ animationDelay: '1s' }}></div>
-                  </div>
-                  <div className="absolute top-20 left-16 bg-gray-500/80 backdrop-blur-sm text-white rounded-full w-12 h-12 flex items-center justify-center text-xs font-bold">
-                    D
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
         </CardContent>

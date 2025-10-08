@@ -75,6 +75,7 @@ def create_tables():
                 UNIQUE(user_id)
             )
         """)
+        
         tables_created.append('user_credits')
 
         cur.execute("""
